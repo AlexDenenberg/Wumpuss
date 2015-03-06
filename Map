@@ -1,0 +1,224 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Testing_wumpus_classes
+{
+    class Map
+    {
+        //List of walls in each room
+        int[,] roomConnect = new int[30, 6] { { 1, 4, 5, 13, 14, 19 }, { 10, 14, 15, 23, 24, 28 }, { 2, 6, 7, 15, 16, 20 }, { 11, 16, 17, 25, 26, 29 }, { 3, 8, 9, 17, 18, 21 }, { 12, 18, 13, 27, 22, 30 }, { 19, 22, 23, 31, 32, 37 }, { 28, 32, 33, 41, 42, 46 }, { 20, 24, 25, 33, 34, 38 }, { 29, 34, 35, 43, 44, 47 }, { 21, 26, 27, 35, 36, 39 }, { 30, 36, 31, 45, 40, 48 }, { 37, 40, 41, 49, 55, 50 }, { 46, 50, 51, 59, 60, 64 }, { 38, 42, 43, 51, 52, 56 }, { 47, 52, 53, 61, 62, 65 }, { 39, 44, 45, 53, 54, 57 }, { 48, 54, 49, 63, 58, 66 }, { 55, 58, 59, 67, 68, 73 }, { 64, 68, 69, 77, 78, 82 }, { 56, 60, 61, 69, 70, 74 }, { 65, 70, 71, 79, 80, 83 }, { 57, 62, 63, 71, 72, 75 }, { 66, 72, 67, 81, 76, 84 }, { 73, 76, 77, 85, 86, 1 }, { 82, 86, 87, 5, 6, 10 }, { 74, 78, 79, 87, 88, 2 }, { 83, 88, 89, 7, 8, 11 }, { 75, 80, 81, 89, 90, 3 }, { 84, 90, 85, 9, 4, 12 } };
+        //Location of doors
+        bool[] doors = new bool[90];
+
+        public Map()
+        {
+        }
+
+        public bool[] generate()
+        {
+            Random rand = new Random();
+            int[] order = scramble();
+            //generate
+
+            //Loop for each room
+            for (int i = 0; i < 30; i++)
+            {
+                //Number of doors in room
+                int count = 0;
+                //Picks how many doors the room will have
+                int doorNum = rand.Next(0, 3) + 1;
+
+                //Checks each wall for already existing doors
+                for (int j = 0; j < 6; j++)
+                {
+                    if (doors[(roomConnect[order[i], j])-1])
+                    {
+                        Console.Out.WriteLine(order[i] + "  " + j);
+                        count++;
+                    }
+                }
+
+                //While there are less doors than it decided the room should have
+                while (count < doorNum)
+                {
+                    //Checks to see if it can add a door, so it doesn't loop infinately
+                    int badRooms = 0;
+                    for(int wall = 0; wall < 6; wall++)
+                    {
+                        if (countDoors(getadjRoom(roomConnect[order[i], wall], order[i])) > 2)
+                            badRooms++;
+                    }
+                    if (badRooms == 6)
+                    {
+                        count = doorNum;
+                    }
+                    //Picks a random wall
+                    int door = rand.Next(0, 6);
+                    //If that wall is not a door
+                    if (!doors[roomConnect[order[i], door] - 1])
+                    {
+                        //Checks that the room next to it doesn't have 3 or more rooms
+                        if (!(countDoors(getadjRoom(roomConnect[order[i], door], order[i])) > 2))
+                        {
+                            //Changes wall to a door
+                            doors[roomConnect[order[i], door] - 1] = true;
+                            count++;
+                        }
+
+                    }
+
+                }
+            }
+
+
+            //returns the 90 boolean array that defines the map
+            return doors;
+        }
+
+        private int getadjRoom(int doorNum, int roomNum)
+        {
+            //Checks all 30 rooms
+            for (int i = 0; i < 30; i++)
+            {
+                //Makes sure its not checking itself
+                if (i != roomNum)
+                {
+                    //Checks each wall in that room
+                    for (int j = 0; j < 6; j++)
+                    {
+                        //Decides if it is the room you are looking for
+                        if (roomConnect[i, j] == doorNum)
+                        {
+                            return i;
+                        }
+                    }
+                }
+            }
+
+            return 1;
+        }
+
+        private int countDoors(int room)
+        {
+            //Initializes a count var
+            int count = 0;
+            for (int i = 0; i < 6; i++)
+            {
+                //Checks each wall for a door
+                if (doors[roomConnect[room, i] - 1])
+                {
+                    count++;
+                }
+            }
+            return count;
+        }
+
+        private int[] scramble()
+        {
+            //This method scrambles the numbers 1-30 so it can go through map gen in a random order
+            int[] roomlist = new int[30];
+            bool[] isUsed = new bool[30];
+            Random rand = new Random();
+
+            for (int i = 0; i < 30; i++)
+            {
+                int room = rand.Next(0, 30);
+
+                while (isUsed[room])
+                {
+                    room = rand.Next(0, 30);
+                }
+
+                roomlist[i] = room;
+                isUsed[room] = true;
+            }
+            return roomlist;
+        }
+            
+        public bool checkDoors(int room, int wall)
+        {
+            //When given a room and a wall # checks if it is a door.
+            //Overlaps with countdoors, need to merge
+            if (doors[roomConnect[room, wall] - 1])
+            {
+                return true;
+            }
+            else
+                return false;
+        }
+
+        public bool[] getMap()
+        {
+            //Public accessor for the boolean array that defines the map
+            return doors;
+        }
+
+        public void print()
+        {
+            //Public method prints all the walls with a door
+            //Used to manually draw and test maps
+            for (int i = 0; i < 90; i++)
+            {
+                if(doors[i])
+                    Console.Out.WriteLine(i);
+            }
+        }
+
+        public bool doorsPerRoom()
+        {
+            //Checks to make sure each room has 1-3 doors
+            for (int i = 0; i < 30; i++)
+            {
+                //Could probs use countdoors instead here
+                int count = 0;
+                for (int j = 0; j < 6; j++)
+                {
+                    
+                    if (checkDoors(i,j))
+                    {
+                        count++;
+                    }
+                    if (count > 3)
+                    {
+                        return false;
+                    }
+                }
+            }
+
+                return true;
+        }
+
+        //array for if each room is accessible
+        private bool[] roomAvail = new bool[90];
+
+        public bool roomsAccessible(int start)
+        {
+            //Not working currently
+            roomAvail[start] = true;
+            for (int j = 0; j < 6; j++)
+            {
+                int room = getadjRoom(start, j);
+                if (doors[roomConnect[start, j] - 1])
+                {
+                    if (!roomAvail[room])
+                    {
+                        roomsAccessible(room);
+                        roomAvail[room] = true;
+                    }
+                }
+            }
+            for (int i = 0; i < 30; i++)
+            {
+                if (!roomAvail[i])
+                {
+                    return false;
+                }
+            }
+                return true;
+        }   
+
+    }
+}
